@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>방비엥 투어 예산 계산기 — 등대투어</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#f0f4f0;min-height:100vh;padding:1rem;font-family:'Noto Sans KR',sans-serif}
+.w{max-width:720px;margin:0 auto;padding:1rem}
+.brand{text-align:center;margin-bottom:1.25rem}
+.brand h1{font-size:20px;font-weight:700;color:#1a6b3c}
+.brand p{font-size:12px;color:#888;margin-top:3px}
+.card{background:#fff;border:1px solid #e0e8e2;border-radius:10px;padding:1rem 1.2rem;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card-title{font-size:12px;font-weight:700;color:#2a6b3c;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+.f{display:flex;flex-direction:column;gap:4px}
+.f label{font-size:12px;color:#555;font-weight:500}
+.f input[type=text],.f input[type=tel],.f select{font-size:13px;padding:7px 9px;border:1px solid #ccd8cc;border-radius:6px;background:#fff;color:#1a1a1a;width:100%}
+.f input:focus,.f select:focus{outline:none;border-color:#1a6b3c}
+.rg{display:flex;gap:7px;flex-wrap:wrap}
+.rg label{display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;padding:5px 11px;border:1px solid #ccd8cc;border-radius:6px;background:#fff;color:#333}
+.rg input[type=radio]{accent-color:#1a6b3c}
+.rg label.on{border-color:#1a6b3c;background:#e8f5ee;color:#1a5c2e;font-weight:600}
+.info-box{background:#e8f5fe;border:1px solid #b3d9f7;border-radius:7px;padding:8px 11px;font-size:12px;color:#0a4d7a;line-height:1.7}
+.green-box{background:#e8f5ee;border:1px solid #a5d6a7;border-radius:7px;padding:7px 11px;font-size:12px;color:#1a5c2e;line-height:1.7;margin:6px 0}
+.warn{background:#fffbe6;border:1px solid #ffe58f;border-radius:7px;padding:7px 11px;font-size:12px;color:#7a5c00;line-height:1.6;margin:6px 0;display:none}
+.warn.show{display:block}
+/* 결과 박스 */
+.result-box{background:#1a6b3c;border-radius:12px;padding:1.25rem;color:#fff;margin-bottom:12px}
+.rs{margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.2)}
+.rs:last-child{border-bottom:none;margin-bottom:0}
+.rs-t{font-size:11px;color:rgba(255,255,255,.7);font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:5px}
+.rr{display:flex;justify-content:space-between;font-size:13px;padding:2px 0}
+.rr .lb{color:rgba(255,255,255,.75)}
+.total-row{display:flex;justify-content:space-between;align-items:flex-end;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.3)}
+.tv{font-size:28px;font-weight:700}
+.per{text-align:right;font-size:12px;color:rgba(255,255,255,.65);margin-top:2px}
+/* 버튼 */
+.btn-row{display:flex;gap:8px;margin-bottom:8px}
+.cta{flex:1;padding:13px;background:#1a6b3c;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}
+.cta:hover{background:#155c33}
+.cta-pdf{flex:1;padding:13px;background:#fff;color:#1a6b3c;border:2px solid #1a6b3c;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}
+.cta-pdf:hover{background:#e8f5ee}
+.note{font-size:11px;color:#999;text-align:center;margin-top:6px;line-height:1.6}
+/* 신뢰 배지 */
+.trust{background:#fff;border:1px solid #e0e8e2;border-radius:10px;padding:14px 16px;margin-top:12px;text-align:center}
+.trust .t1{font-size:15px;font-weight:700;color:#1a6b3c;margin-bottom:8px}
+.trust-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.trust-item{background:#f0faf4;border-radius:8px;padding:10px;font-size:13px;color:#1a5c2e;font-weight:600;text-align:center}
+.trust-item span{display:block;font-size:11px;color:#888;font-weight:400;margin-top:2px}
+/* 투어 타입 카드 */
+.type-select-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+.type-card{border:2px solid #ccd8cc;border-radius:10px;padding:12px;cursor:pointer;transition:all .2s;background:#fff;text-align:center}
+.type-card:hover{border-color:#4aad6e;background:#f5fbf7}
+.type-card.selected{border-color:#1a6b3c;background:#e8f5ee}
+.type-card .tc-icon{font-size:26px;margin-bottom:5px}
+.type-card .tc-title{font-size:13px;font-weight:700;color:#1a4a2e}
+.type-card .tc-desc{font-size:11px;color:#666;margin-top:4px;line-height:1.5}
+.type-card input[type=radio]{display:none}
+/* 서브섹션 */
+.subsection{display:none;margin-top:10px;border-top:1px solid #e0e8e2;padding-top:10px}
+.subsection.show{display:block}
+/* 일자 구분 */
+.day-box{background:#f4faf6;border:1px solid #c5dfc5;border-radius:8px;padding:10px 12px;margin-bottom:10px}
+.day-box-title{font-size:12px;font-weight:700;color:#1a6b3c;margin-bottom:8px}
+/* 접힘/펼침 */
+.coll-wrap{border:1px solid #d8e8d8;border-radius:8px;overflow:hidden;margin-bottom:6px}
+.coll-header{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:#f8faf8;cursor:pointer;user-select:none}
+.coll-header .ch-label{font-size:13px;font-weight:700;color:#1a5c2e}
+.coll-arrow{font-size:12px;color:#888;transition:transform .2s;flex-shrink:0}
+.coll-arrow.open{transform:rotate(180deg)}
+.coll-body{display:none;padding:10px 12px}
+.coll-body.open{display:block}
+/* 액티비티 아이템 */
+.activity-grid{display:flex;flex-direction:column;gap:5px}
+.act-item{display:flex;align-items:flex-start;padding:8px 11px;border:1px solid #d8e8d8;border-radius:8px;background:#f8faf8;cursor:pointer;transition:all .15s;gap:0}
+.act-item:hover{border-color:#1a6b3c;background:#edf7f1}
+.act-item.selected{border-color:#1a6b3c;background:#e8f5ee}
+.act-item input{accent-color:#1a6b3c;margin-right:8px;flex-shrink:0;margin-top:2px}
+.act-item .act-name{font-size:13px;color:#1a1a1a;flex:1;line-height:1.4}
+.act-item.selected .act-name{font-weight:600}
+.act-item .act-price{font-size:13px;font-weight:700;color:#1a6b3c;white-space:nowrap;flex-shrink:0;margin-left:8px}
+/* 반일 안내 */
+.half-notice{font-size:11px;color:#0c5460;background:#d1ecf1;border-radius:6px;padding:5px 9px;margin-bottom:6px;line-height:1.5}
+.sub-time-label{font-size:11px;font-weight:700;color:#0c5460;margin:6px 0 4px;padding:3px 0;border-bottom:1px dashed #b3d9d9}
+/* 숙소 */
+.hotel-card-grid{display:flex;flex-direction:column;gap:5px}
+.hotel-card{display:flex;align-items:center;padding:8px 11px;border:1px solid #d8e8d8;border-radius:8px;background:#f8faf8;cursor:pointer;transition:all .15s}
+.hotel-card:hover{border-color:#1a6b3c;background:#edf7f1}
+.hotel-card.selected{border-color:#1a6b3c;background:#e8f5ee;font-weight:600}
+.hotel-card input[type=radio]{accent-color:#1a6b3c;margin-right:8px}
+.hotel-card .hn{font-size:13px;color:#1a1a1a;flex:1}
+.hotel-card .htype{font-size:11px;color:#888;margin-left:4px}
+.hotel-card .hprice{font-size:13px;font-weight:700;color:#1a6b3c}
+/* 골프 블록 */
+.golf-block{background:#f8faf8;border:1px solid #d8e8d8;border-radius:8px;padding:10px 12px;margin-bottom:10px}
+/* 토글 스위치 */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0}
+.tl{font-size:13px;color:#333;font-weight:500}
+.ts{font-size:11px;color:#888;margin-top:2px}
+.tt{position:relative;width:34px;height:20px;border-radius:10px;background:#ccc;cursor:pointer;transition:background .2s;flex-shrink:0}
+.tt.on{background:#1a6b3c}
+.tt::after{content:'';position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .2s}
+.tt.on::after{transform:translateX(14px)}
+@media print{
+  body{background:#fff;padding:0}
+  .no-print{display:none!important}
+  .card{box-shadow:none;border:1px solid #ddd}
+  .result-box{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<div class="w">
+
+<div class="brand">
+  <h1>🏝️ 등대투어 — 방비엥 투어 예산 계산기</h1>
+  <p>투어 타입 선택 후 옵션을 고르시면 예상 비용을 즉시 확인하세요 (단위: 원)</p>
+</div>
+
+<!-- ① 차량 — 최상단 고정 -->
+<div class="card">
+  <div class="card-title">차량 (비엔티안 ↔ 방비엥 전용밴)</div>
+  <div class="info-box">
+    비엔티안 → 방비엥 편도 약 1시간 30분 소요 · 최대 10인 · 15인승 전용밴 운행<br>
+    왕복 차량 렌트비 <strong>₩387,500</strong> (1대 고정요금 · 인원 무관)
+  </div>
+</div>
+
+<!-- ② 기본 정보 -->
+<div class="card">
+  <div class="card-title">기본 정보</div>
+  <div class="row2" style="margin-bottom:8px">
+    <div class="f"><label>이름</label><input type="text" id="name" placeholder="홍길동" oninput="calc()"/></div>
+    <div class="f"><label>연락처</label><input type="tel" id="phone" placeholder="010-0000-0000" oninput="calc()"/></div>
+  </div>
+  <div class="row2">
+    <div class="f"><label>희망 출발일 (방비엥 이동일)</label><input type="date" id="startdate" onchange="calc()"/></div>
+    <div class="f"><label>여행 인원 (최대 10인)</label>
+      <select id="pax" onchange="rebuildAll();calc()">
+        <option value="1">1명</option><option value="2">2명</option><option value="3">3명</option>
+        <option value="4" selected>4명</option><option value="5">5명</option><option value="6">6명</option>
+        <option value="7">7명</option><option value="8">8명</option><option value="9">9명</option>
+        <option value="10">10명</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- ③ STEP 1 -->
+<div class="card">
+  <div class="card-title">STEP 1 — 투어 타입 선택</div>
+  <div class="type-select-grid">
+    <label class="type-card selected" id="tc-A" onclick="selectTourType('A')">
+      <input type="radio" name="tourtype" value="A" checked>
+      <div class="tc-icon">☀️</div>
+      <div class="tc-title">당일 or 일박 투어<br><span style="font-weight:400;font-size:11px">(골프 일정 중 하루)</span></div>
+      <div class="tc-desc">골프 라운딩 중 하루를<br>방비엥 이동 후 액티비티,<br>당일 또는 일박 후 비엔티안 복귀</div>
+    </label>
+    <label class="type-card" id="tc-B" onclick="selectTourType('B')">
+      <input type="radio" name="tourtype" value="B">
+      <div class="tc-icon">🌙</div>
+      <div class="tc-title">골프 후 이동 투어<br><span style="font-weight:400;font-size:11px">(라운딩 후 오후 출발)</span></div>
+      <div class="tc-desc">골프 라운딩 마치고 오후<br>방비엥 이동·휴식,<br>익일 액티비티 또는 골프 후 복귀</div>
+    </label>
+  </div>
+</div>
+
+<!-- ===== SECTION A ===== -->
+<div class="card" id="section-A">
+  <div class="card-title">STEP 2 — 방비엥 일정 선택 (당일 / 일박)</div>
+  <div class="type-select-grid">
+    <label class="type-card selected" id="tc-A1" onclick="selectSubType('A1')">
+      <input type="radio" name="subtype" value="A1" checked>
+      <div class="tc-icon">🌅</div>
+      <div class="tc-title">당일 왕복</div>
+      <div class="tc-desc">아침 출발 → 방비엥 액티비티<br>→ 당일 비엔티안 복귀</div>
+    </label>
+    <label class="type-card" id="tc-A2" onclick="selectSubType('A2')">
+      <input type="radio" name="subtype" value="A2">
+      <div class="tc-icon">🌃</div>
+      <div class="tc-title">일박 후 복귀</div>
+      <div class="tc-desc">아침 출발 → 1일차 액티비티<br>→ 방비엥 일박<br>→ 2일차 일정 후 복귀</div>
+    </label>
+  </div>
+
+  <!-- A1: 당일 왕복 -->
+  <div id="sub-A1" class="subsection show">
+    <div style="font-size:12px;font-weight:700;color:#2a6b3c;margin-bottom:8px">🚐 출발 시간 선택</div>
+    <div class="rg" id="dep-A1-group" style="margin-bottom:10px">
+      <label class="on"><input type="radio" name="depA1" value="730" checked onchange="updateRg('dep-A1-group');toggleDep('A1');"> AM 07:30 출발</label>
+      <label><input type="radio" name="depA1" value="900" onchange="updateRg('dep-A1-group');toggleDep('A1');"> AM 09:00 출발</label>
+    </div>
+
+    <!-- 07:30 -->
+    <div id="sec730-A1">
+      <div class="green-box">✅ AM 07:30 비엔티안 출발 → AM 09:00 방비엥 도착 → 액티비티 시작 → 자유시간 → 저녁 비엔티안 복귀</div>
+      <div id="act-A1-full-wrap" class="coll-wrap" style="margin-top:8px">
+        <div class="coll-header" onclick="toggleColl('act-A1-full-body','arr-A1-full')">
+          <span class="ch-label">🟡 전일 액티비티 — AM 09:00 시작 (중식 도시락 제공) · 1가지 선택</span>
+          <span class="coll-arrow open" id="arr-A1-full">▼</span>
+        </div>
+        <div class="coll-body open" id="act-A1-full-body">
+          <div class="activity-grid" id="act-A1-full"></div>
+        </div>
+      </div>
+      <div id="act-A1-half-wrap" class="coll-wrap">
+        <div class="coll-header" onclick="toggleColl('act-A1-half-body','arr-A1-half')">
+          <span class="ch-label">🔵 반일 액티비티 — 오전 + 오후 각 1가지씩 선택 가능</span>
+          <span class="coll-arrow" id="arr-A1-half">▼</span>
+        </div>
+        <div class="coll-body" id="act-A1-half-body">
+          <div class="half-notice">💡 오전 반일(AM 09:00) + 오후 반일(PM 01:00) 각 1가지씩 선택 · 중식은 시내에서 자체 해결</div>
+          <div class="sub-time-label">오전 반일 (AM 09:00~)</div>
+          <div class="activity-grid" id="act-A1-ham"></div>
+          <div class="sub-time-label">오후 반일 (PM 01:00~)</div>
+          <div class="activity-grid" id="act-A1-hpm"></div>
+        </div>
+      </div>
+      <div id="warn-A1-conflict" class="warn">⚠️ 전일 투어와 반일 투어는 함께 선택할 수 없습니다. 하나의 섹션만 선택해 주세요.</div>
+    </div>
+
+    <!-- 09:00 -->
+    <div id="sec900-A1" style="display:none">
+      <div class="green-box">✅ AM 09:00 비엔티안 출발 → AM 10:30 방비엥 도착 → 방비엥 이동 차량 그대로 이용하여 투어 진행 → 비엔티안 복귀</div>
+      <div style="font-size:12px;font-weight:700;color:#2a6b3c;margin:10px 0 6px">🎯 투어 목적지 선택 (1가지 · 차량 이동비 포함)</div>
+      <div class="activity-grid" id="act-A1-900"></div>
+    </div>
+  </div>
+
+  <!-- A2: 일박 후 복귀 -->
+  <div id="sub-A2" class="subsection">
+    <!-- 1일차 -->
+    <div class="day-box">
+      <div class="day-box-title">📅 1일차 (방비엥 이동일) — 당일 왕복과 동일 구성</div>
+      <div style="font-size:12px;font-weight:700;color:#2a6b3c;margin-bottom:8px">🚐 출발 시간 선택</div>
+      <div class="rg" id="dep-A2-group" style="margin-bottom:10px">
+        <label class="on"><input type="radio" name="depA2" value="730" checked onchange="updateRg('dep-A2-group');toggleDep('A2');"> AM 07:30 출발</label>
+        <label><input type="radio" name="depA2" value="900" onchange="updateRg('dep-A2-group');toggleDep('A2');"> AM 09:00 출발</label>
+      </div>
+      <div id="sec730-A2">
+        <div class="green-box">✅ AM 07:30 출발 → AM 09:00 방비엥 도착 → 액티비티 → 숙소 체크인</div>
+        <div id="act-A2d1-full-wrap" class="coll-wrap" style="margin-top:8px">
+          <div class="coll-header" onclick="toggleColl('act-A2d1-full-body','arr-A2d1-full')">
+            <span class="ch-label">🟡 전일 액티비티 — AM 09:00 시작 (중식 도시락 제공) · 1가지 선택</span>
+            <span class="coll-arrow open" id="arr-A2d1-full">▼</span>
+          </div>
+          <div class="coll-body open" id="act-A2d1-full-body">
+            <div class="activity-grid" id="act-A2d1-full"></div>
+          </div>
+        </div>
+        <div id="act-A2d1-half-wrap" class="coll-wrap">
+          <div class="coll-header" onclick="toggleColl('act-A2d1-half-body','arr-A2d1-half')">
+            <span class="ch-label">🔵 반일 액티비티 — 오전 + 오후 각 1가지씩 선택 가능</span>
+            <span class="coll-arrow" id="arr-A2d1-half">▼</span>
+          </div>
+          <div class="coll-body" id="act-A2d1-half-body">
+            <div class="half-notice">💡 오전 반일(AM 09:00) + 오후 반일(PM 01:00) 각 1가지씩 선택 · 중식 자체 해결</div>
+            <div class="sub-time-label">오전 반일 (AM 09:00~)</div>
+            <div class="activity-grid" id="act-A2d1-ham"></div>
+            <div class="sub-time-label">오후 반일 (PM 01:00~)</div>
+            <div class="activity-grid" id="act-A2d1-hpm"></div>
+          </div>
+        </div>
+      </div>
+      <div id="sec900-A2" style="display:none">
+        <div class="green-box">✅ AM 09:00 출발 → AM 10:30 도착 → 방비엥 차량 이용 투어 → 숙소 체크인</div>
+        <div style="font-size:12px;font-weight:700;color:#2a6b3c;margin:10px 0 6px">🎯 투어 목적지 선택 (1가지)</div>
+        <div class="activity-grid" id="act-A2d1-900"></div>
+      </div>
+    </div>
+
+    <!-- 2일차 -->
+    <div class="day-box">
+      <div class="day-box-title">📅 2일차 (비엔티안 복귀일) <span style="font-size:11px;color:#888;font-weight:400">— 방비엥 일정 후 복귀 · 출발 시간은 협의 후 진행</span></div>
+      <div class="green-box" style="margin-bottom:8px">✅ 전일 또는 반일 액티비티 진행 후 비엔티안 복귀 · 구체적 출발 시간은 상담 시 협의</div>
+      <div id="act-A2d2-full-wrap" class="coll-wrap">
+        <div class="coll-header" onclick="toggleColl('act-A2d2-full-body','arr-A2d2-full')">
+          <span class="ch-label">🟡 전일 액티비티 — AM 09:00 시작 (중식 도시락 제공) · 1가지 선택</span>
+          <span class="coll-arrow open" id="arr-A2d2-full">▼</span>
+        </div>
+        <div class="coll-body open" id="act-A2d2-full-body">
+          <div class="activity-grid" id="act-A2d2-full"></div>
+        </div>
+      </div>
+      <div id="act-A2d2-half-wrap" class="coll-wrap">
+        <div class="coll-header" onclick="toggleColl('act-A2d2-half-body','arr-A2d2-half')">
+          <span class="ch-label">🔵 반일 액티비티 — 오전 + 오후 각 1가지씩 선택 가능</span>
+          <span class="coll-arrow" id="arr-A2d2-half">▼</span>
+        </div>
+        <div class="coll-body" id="act-A2d2-half-body">
+          <div class="half-notice">💡 오전 반일(AM 09:00) + 오후 반일(PM 01:00) 각 1가지씩 선택 · 중식 자체 해결</div>
+          <div class="sub-time-label">오전 반일 (AM 09:00~)</div>
+          <div class="activity-grid" id="act-A2d2-ham"></div>
+          <div class="sub-time-label">오후 반일 (PM 01:00~)</div>
+          <div class="activity-grid" id="act-A2d2-hpm"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 숙소 -->
+    <div style="font-size:12px;font-weight:700;color:#2a6b3c;margin-bottom:8px">🏨 방비엥 숙소 선택 (1박)</div>
+    <div class="hotel-card-grid" id="hotel-A2"></div>
+    <div class="f" style="margin-top:8px">
+      <label>객실 타입</label>
+      <div class="rg" id="rtype-A2">
+        <label class="on"><input type="radio" name="roomA2" value="single" checked onchange="updateRg('rtype-A2');calc()"> 1인 1실</label>
+        <label><input type="radio" name="roomA2" value="double" onchange="updateRg('rtype-A2');calc()"> 2인 1실</label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SECTION B ===== -->
+<div class="card" id="section-B" style="display:none">
+  <div class="card-title">STEP 2 — 익일 방비엥 일정 선택</div>
+  <div class="type-select-grid">
+    <label class="type-card selected" id="tc-B1" onclick="selectSubType('B1')">
+      <input type="radio" name="subtype" value="B1">
+      <div class="tc-icon">🏃</div>
+      <div class="tc-title">오전 액티비티 후<br>자유시간, 복귀</div>
+      <div class="tc-desc">방비엥 도착·휴식<br>→ 익일 오전 액티비티<br>→ 자유시간 후 비엔티안 복귀</div>
+    </label>
+    <label class="type-card" id="tc-B2" onclick="selectSubType('B2')">
+      <input type="radio" name="subtype" value="B2">
+      <div class="tc-icon">⛳</div>
+      <div class="tc-title">오전 골프 라운딩 후<br>자유시간, 복귀</div>
+      <div class="tc-desc">방비엥 도착·휴식<br>→ 익일 방비엥 골프 오전 라운딩<br>→ 자유시간 후 비엔티안 복귀</div>
+    </label>
+  </div>
+
+  <div class="info-box" style="margin:10px 0">
+    🚐 비엔티안 골프 라운딩 종료 후 오후 방비엥 이동 · 도착 후 숙소 체크인 및 자유 휴식<br>
+    <span style="font-size:11px;color:#3a7abf">※ 방비엥 이동 출발 시간은 별도 안내 없음 — 상담 시 협의</span>
+  </div>
+
+  <!-- B 공통: 숙소 -->
+  <div style="font-size:12px;font-weight:700;color:#2a6b3c;margin-bottom:8px">🏨 방비엥 숙소 선택 (필수 1박)</div>
+  <div class="hotel-card-grid" id="hotel-B"></div>
+  <div class="f" style="margin-top:8px;margin-bottom:10px">
+    <label>객실 타입</label>
+    <div class="rg" id="rtype-B">
+      <label class="on"><input type="radio" name="roomB" value="single" checked onchange="updateRg('rtype-B');calc()"> 1인 1실</label>
+      <label><input type="radio" name="roomB" value="double" onchange="updateRg('rtype-B');calc()"> 2인 1실</label>
+    </div>
+  </div>
+
+  <!-- B1: 익일 액티비티 -->
+  <div id="sub-B1" class="subsection show">
+    <div style="font-size:12px;font-weight:700;color:#2a6b3c;margin-bottom:8px">🎯 익일 액티비티 선택</div>
+    <div id="act-B1-full-wrap" class="coll-wrap">
+      <div class="coll-header" onclick="toggleColl('act-B1-full-body','arr-B1-full')">
+        <span class="ch-label">🟡 전일 액티비티 — AM 09:00 시작 (중식 도시락 제공) · 1가지 선택</span>
+        <span class="coll-arrow open" id="arr-B1-full">▼</span>
+      </div>
+      <div class="coll-body open" id="act-B1-full-body">
+        <div class="activity-grid" id="act-B1-full"></div>
+      </div>
+    </div>
+    <div id="act-B1-half-wrap" class="coll-wrap">
+      <div class="coll-header" onclick="toggleColl('act-B1-half-body','arr-B1-half')">
+        <span class="ch-label">🔵 반일 액티비티 — 오전 + 오후 각 1가지씩 선택 가능</span>
+        <span class="coll-arrow" id="arr-B1-half">▼</span>
+      </div>
+      <div class="coll-body" id="act-B1-half-body">
+        <div class="half-notice">💡 오전 반일(AM 09:00) + 오후 반일(PM 01:00) 각 1가지씩 선택 · 중식 자체 해결</div>
+        <div class="sub-time-label">오전 반일 (AM 09:00~)</div>
+        <div class="activity-grid" id="act-B1-ham"></div>
+        <div class="sub-time-label">오후 반일 (PM 01:00~)</div>
+        <div class="activity-grid" id="act-B1-hpm"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- B2: 골프 + 오후 선택 반일 -->
+  <div id="sub-B2" class="subsection">
+    <div class="golf-block">
+      <div style="font-size:12px;font-weight:700;color:#1a6b3c;margin-bottom:8px">⛳ 방비엥 골프장 (단 1개소 · 주중/주말 동일 요금)</div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:#555;margin-bottom:4px">
+        <span>18홀 그린피 + 2인 1카트 + 캐디 포함</span>
+        <span id="golf-krw-display" style="font-weight:700;color:#1a6b3c">—</span>
+      </div>
+      <div id="golf-odd-warn" class="warn">홀수 인원 — 1인 1카트 추가비용 ₩20,150이 자동 반영됩니다.</div>
+      <div style="font-size:11px;color:#888;margin-top:4px">※ 캐디팁 $15는 별도 (라운딩 후 직접 지급)</div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:#2a6b3c;margin-bottom:6px">🎯 오후 반일 액티비티 (선택 사항 · PM 01:00~)</div>
+    <div class="half-notice">💡 골프 라운딩 종료 후 오후에 추가 액티비티 선택 가능 (선택 안 해도 됩니다)</div>
+    <div class="activity-grid" id="act-B2-hpm" style="margin-top:6px"></div>
+  </div>
+</div>
+
+<!-- ④ 추가 옵션 -->
+<div class="card">
+  <div class="card-title">추가 옵션</div>
+  <div class="toggle-row">
+    <div>
+      <div class="tl">스피드 보트 (쏭강 풍경 유람)</div>
+      <div class="ts">2인 1보트 × ₩15,500 · 선택 사항</div>
+    </div>
+    <div class="tt" id="t-speedboat" onclick="toggleOpt('speedboat')"></div>
+  </div>
+</div>
+
+<!-- ⑤ 기타 참고 비용 -->
+<div class="card">
+  <div class="card-title">기타 비용 (참고 안내)</div>
+  <div class="info-box" style="margin-bottom:8px">
+    <strong>식사</strong><br>
+    · <span style="color:#1a5c2e;font-weight:600">전일 액티비티 선택 시</span> — 해당 투어사에서 중식(투어식 도시락) 제공<br>
+    · <span style="color:#0c5460;font-weight:600">반일 투어 선택 시</span> — 중식 미제공, 시내에서 자체 해결 (인당 약 ₩10,000~15,000)<br>
+    · 석식·조식은 현지 식당 자유 이용<br>
+    <span style="font-size:11px;color:#555">주류 및 음료 등 개인 비용 별도</span>
+  </div>
+  <div class="info-box">
+    <strong>방비엥 자유 시간</strong> — 투어 종료 후 방비엥 시내 쇼핑·카페 등 자유 이용 가능<br>
+    <span style="font-size:11px;color:#555">개인 지출 별도</span>
+  </div>
+  <div style="font-size:11px;color:#999;margin-top:6px">※ 위 항목은 참고용이며 견적 합계에는 포함되지 않습니다.</div>
+</div>
+
+<!-- ⑥ 견적 결과 -->
+<div class="result-box">
+  <div class="rs">
+    <div class="rs-t">기본 정보</div>
+    <div class="rr"><span class="lb">고객명</span><span id="r-name">—</span></div>
+    <div class="rr"><span class="lb">연락처</span><span id="r-phone">—</span></div>
+    <div class="rr"><span class="lb">출발일</span><span id="r-date">—</span></div>
+    <div class="rr"><span class="lb">인원 / 투어 타입</span><span id="r-basic">—</span></div>
+  </div>
+  <div class="rs">
+    <div class="rs-t">선택 일정</div>
+    <div class="rr"><span class="lb">일정 구분</span><span id="r-tourtype" style="text-align:right;max-width:65%">—</span></div>
+    <div class="rr"><span class="lb">선택 액티비티</span><span id="r-activity" style="text-align:right;max-width:65%;font-size:12px">—</span></div>
+  </div>
+  <div class="rs">
+    <div class="rs-t">비용 내역</div>
+    <div class="rr"><span class="lb">차량 (비엔티안↔방비엥 왕복)</span><span>₩387,500</span></div>
+    <div id="r-act-rows"></div>
+    <div class="rr" id="r-hotel-row" style="display:none"><span class="lb" id="r-hotel-lbl">방비엥 숙박</span><span id="r-hotel-cost">—</span></div>
+    <div class="rr" id="r-golf-row" style="display:none"><span class="lb">방비엥 골프 라운딩</span><span id="r-golf-cost">—</span></div>
+    <div class="rr" id="r-speedboat-row" style="display:none"><span class="lb">스피드 보트</span><span id="r-speedboat-cost">—</span></div>
+  </div>
+  <div class="total-row">
+    <div>
+      <div style="font-size:13px;color:rgba(255,255,255,.8)">예상 총 비용 (팀 전체)</div>
+      <div class="per" id="r-per">1인당 약 ₩0</div>
+    </div>
+    <div class="tv" id="r-total">₩0</div>
+  </div>
+</div>
+
+<div class="btn-row no-print">
+  <button class="cta" onclick="sendKakao()">견적 결과 카카오톡 문의</button>
+  <button class="cta-pdf" onclick="printPDF()">PDF 저장 / 인쇄</button>
+</div>
+<div class="note">※ 위 금액은 예상 견적으로 환율·시즌에 따라 달라질 수 있습니다<br>국제선 항공권 및 여행자보험은 포함되지 않습니다</div>
+
+<div class="trust">
+  <div class="t1">🏆 등대투어를 선택하는 이유</div>
+  <div class="trust-grid">
+    <div class="trust-item">누적 2,000팀 진행<span>라오스 골프 전문 여행사</span></div>
+    <div class="trust-item">네이버 카페 후기 1,000건<span>실제 고객 생생 후기</span></div>
+    <div class="trust-item">현지 직영 운영<span>중간 마진 없는 직거래</span></div>
+    <div class="trust-item">한국어 전담 상담<span>카카오톡 즉시 응답</span></div>
+  </div>
+</div>
+
+</div><!-- .w -->
+
+<script>
+// ===== 데이터 =====
+var ACT_FULL = [
+  {id:'f1', name:'짚라인 + 카약킹 + 탐논(물동굴) + 블루라군1', pricePerUnit:40000, unit:'인'},
+  {id:'f2', name:'짚라인 + 카약킹 + 탐논(물동굴) + 블루라군3', pricePerUnit:52000, unit:'인'},
+  {id:'f3', name:'카약킹 + 탐논(동굴) + 블루라군1', pricePerUnit:32000, unit:'인'},
+  {id:'f4', name:'원더플 + 카약킹 + 천사동굴 + 탐논(물동굴) + 블루라군1', pricePerUnit:33000, unit:'인'},
+  {id:'f5', name:'원더플 + 카약킹 + 천사동굴 + 탐논(물동굴) + 짚라인', pricePerUnit:42000, unit:'인'},
+  {id:'f6', name:'원더플 + 카약킹 + 천사동굴 + 탐논(물동굴) + 짚라인 + 블루라군1', pricePerUnit:51000, unit:'인'},
+];
+// 반일 (오전/오후 공통) — 블루라군·탐짱은 09:00 출발 차량 이용 전용이므로 반일 그리드에서는 제외
+var ACT_HALF = [
+  {id:'h3', name:'짚라인 + 카약', pricePerUnit:29000, unit:'인'},
+  {id:'h4', name:'카약 + 탐논(물동굴)', pricePerUnit:18000, unit:'인'},
+  {id:'h5', name:'짚라인 + 탐논(물동굴)', pricePerUnit:28000, unit:'인'},
+  {id:'h7', name:'버기카(2인 1대) + 블루라군1/3, 길 안내 가이드 포함', pricePerUnit:71000, unit:'대', unitPer:2},
+];
+// AM 09:00 출발 시 — 방비엥 차량 그대로 이용 목적지 (고정요금)
+var ACT_900 = [
+  {id:'g1', name:'블루라군1 / 블루라군3 이동 후 물놀이', pricePerUnit:46500, unit:'대', isFlat:true},
+  {id:'g2', name:'탐짱 동굴 물놀이 체험 및 동굴 체험', pricePerUnit:46500, unit:'대', isFlat:true},
+];
+var HOTELS_VV = [
+  {id:'h_silver', name:'실버나가', type:'리버뷰 (공통)', price:93000},
+  {id:'h_amari', name:'아마리 방비엥', type:'슈페리어 시티뷰', price:139500},
+  {id:'h_amari_r', name:'아마리 방비엥', type:'슈페리어 리버뷰', price:155000},
+];
+
+var selectedTourType='A', selectedSubType='A1';
+var opts={speedboat:false};
+var KRW=1550;
+
+// ===== UI 헬퍼 =====
+function toggleColl(bodyId, arrId){
+  var b=document.getElementById(bodyId), a=document.getElementById(arrId);
+  if(!b) return;
+  var open=b.classList.toggle('open');
+  if(a) a.classList.toggle('open', open);
+  calc();
+}
+function updateRg(id){
+  document.querySelectorAll('#'+id+' label').forEach(function(l){
+    l.classList.toggle('on',l.querySelector('input').checked);
+  });
+}
+function toggleOpt(k){
+  opts[k]=!opts[k];
+  document.getElementById('t-'+k).classList.toggle('on',opts[k]);
+  calc();
+}
+function toggleDep(key){
+  // key: 'A1' or 'A2'
+  var dep=document.querySelector('input[name="dep'+key+'"]:checked').value;
+  document.getElementById('sec730-'+key).style.display=dep==='730'?'block':'none';
+  document.getElementById('sec900-'+key).style.display=dep==='900'?'block':'none';
+  calc();
+}
+
+// ===== 그리드 빌더 =====
+function calcActCost(act, pax){
+  if(act.isFlat) return act.pricePerUnit;
+  if(act.unitPer) return Math.ceil(pax/act.unitPer)*act.pricePerUnit;
+  return act.pricePerUnit*pax;
+}
+
+// 라디오 그리드 (전일, 09:00)
+function buildRadio(containerId, list, pax){
+  var c=document.getElementById(containerId); if(!c) return;
+  c.innerHTML=list.map(function(a,i){
+    var cost=calcActCost(a,pax);
+    return '<label class="act-item'+(i===0?' selected':'')+'">'+
+      '<input type="radio" name="r_'+containerId+'" value="'+a.id+'"'+(i===0?' checked':'')+' onchange="syncSel(\''+containerId+'\');calc()">'+
+      '<span class="act-name">'+a.name+'</span>'+
+      '<span class="act-price">₩'+cost.toLocaleString()+'</span></label>';
+  }).join('');
+  c.querySelectorAll('.act-item').forEach(function(el){
+    el.addEventListener('click',function(e){
+      if(e.target.tagName==='INPUT') return;
+      var inp=el.querySelector('input'); if(!inp) return;
+      inp.checked=true; syncSel(containerId); calc();
+    });
+  });
+}
+
+// 체크박스 그리드 (반일, max 1)
+function buildCheck(containerId, list, pax){
+  var c=document.getElementById(containerId); if(!c) return;
+  c.innerHTML=list.map(function(a){
+    var cost=calcActCost(a,pax);
+    return '<label class="act-item">'+
+      '<input type="checkbox" name="c_'+containerId+'" value="'+a.id+'" onchange="enforceOne(\''+containerId+'\');calc()">'+
+      '<span class="act-name">'+a.name+'</span>'+
+      '<span class="act-price">₩'+cost.toLocaleString()+'</span></label>';
+  }).join('');
+  c.querySelectorAll('.act-item').forEach(function(el){
+    el.addEventListener('click',function(e){
+      if(e.target.tagName==='INPUT') return;
+      var inp=el.querySelector('input'); if(!inp) return;
+      inp.checked=!inp.checked; enforceOne(containerId); calc();
+    });
+  });
+}
+
+// B2 오후 반일 (선택 없음 포함 라디오)
+function buildOptRadio(containerId, list, pax){
+  var c=document.getElementById(containerId); if(!c) return;
+  var none='<label class="act-item selected">'+
+    '<input type="radio" name="r_'+containerId+'" value="none" checked onchange="syncSel(\''+containerId+'\');calc()">'+
+    '<span class="act-name" style="color:#888">선택 안 함 (골프 후 자유시간)</span>'+
+    '<span class="act-price" style="color:#aaa">₩0</span></label>';
+  c.innerHTML=none+list.map(function(a){
+    var cost=calcActCost(a,pax);
+    return '<label class="act-item">'+
+      '<input type="radio" name="r_'+containerId+'" value="'+a.id+'" onchange="syncSel(\''+containerId+'\');calc()">'+
+      '<span class="act-name">'+a.name+'</span>'+
+      '<span class="act-price">₩'+cost.toLocaleString()+'</span></label>';
+  }).join('');
+  c.querySelectorAll('.act-item').forEach(function(el){
+    el.addEventListener('click',function(e){
+      if(e.target.tagName==='INPUT') return;
+      var inp=el.querySelector('input'); if(!inp) return;
+      inp.checked=true; syncSel(containerId); calc();
+    });
+  });
+}
+
+function syncSel(cid){
+  var c=document.getElementById(cid); if(!c) return;
+  c.querySelectorAll('.act-item').forEach(function(el){
+    el.classList.toggle('selected',el.querySelector('input').checked);
+  });
+}
+function enforceOne(cid){
+  var c=document.getElementById(cid); if(!c) return;
+  var checked=Array.from(c.querySelectorAll('input[type=checkbox]:checked'));
+  if(checked.length>1) checked[0].checked=false;
+  c.querySelectorAll('.act-item').forEach(function(el){
+    el.classList.toggle('selected',el.querySelector('input').checked);
+  });
+}
+
+function buildHotel(cid){
+  var c=document.getElementById(cid); if(!c) return;
+  c.innerHTML=HOTELS_VV.map(function(h,i){
+    return '<label class="hotel-card'+(i===0?' selected':'')+'">'+
+      '<input type="radio" name="rh_'+cid+'" value="'+h.id+'"'+(i===0?' checked':'')+' onchange="syncHotelSel(\''+cid+'\');calc()">'+
+      '<span class="hn">'+h.name+'<span class="htype">('+h.type+')</span></span>'+
+      '<span class="hprice">₩'+h.price.toLocaleString()+'</span></label>';
+  }).join('');
+  c.querySelectorAll('.hotel-card').forEach(function(el){
+    el.addEventListener('click',function(e){
+      if(e.target.tagName==='INPUT') return;
+      var inp=el.querySelector('input'); if(!inp) return;
+      inp.checked=true; syncHotelSel(cid); calc();
+    });
+  });
+}
+function syncHotelSel(cid){
+  var c=document.getElementById(cid); if(!c) return;
+  c.querySelectorAll('.hotel-card').forEach(function(el){
+    el.classList.toggle('selected',el.querySelector('input').checked);
+  });
+}
+
+function rebuildAll(){
+  var pax=+document.getElementById('pax').value;
+  // A1
+  buildRadio('act-A1-full', ACT_FULL, pax);
+  buildCheck('act-A1-ham', ACT_HALF, pax);
+  buildCheck('act-A1-hpm', ACT_HALF, pax);
+  buildRadio('act-A1-900', ACT_900, pax);
+  // A2 d1
+  buildRadio('act-A2d1-full', ACT_FULL, pax);
+  buildCheck('act-A2d1-ham', ACT_HALF, pax);
+  buildCheck('act-A2d1-hpm', ACT_HALF, pax);
+  buildRadio('act-A2d1-900', ACT_900, pax);
+  // A2 d2
+  buildRadio('act-A2d2-full', ACT_FULL, pax);
+  buildCheck('act-A2d2-ham', ACT_HALF, pax);
+  buildCheck('act-A2d2-hpm', ACT_HALF, pax);
+  // B1
+  buildRadio('act-B1-full', ACT_FULL, pax);
+  buildCheck('act-B1-ham', ACT_HALF, pax);
+  buildCheck('act-B1-hpm', ACT_HALF, pax);
+  // B2
+  buildOptRadio('act-B2-hpm', ACT_HALF, pax);
+  // Hotels
+  buildHotel('hotel-A2');
+  buildHotel('hotel-B');
+}
+
+// ===== 투어 타입/서브타입 =====
+function selectTourType(t){
+  selectedTourType=t;
+  ['A','B'].forEach(function(x){document.getElementById('tc-'+x).classList.toggle('selected',x===t);});
+  document.getElementById('section-A').style.display=t==='A'?'block':'none';
+  document.getElementById('section-B').style.display=t==='B'?'block':'none';
+  if(t==='B'){selectedSubType='B1';setSub('B1');}
+  else{selectedSubType='A1';setSub('A1');}
+  calc();
+}
+function selectSubType(s){selectedSubType=s;setSub(s);calc();}
+function setSub(s){
+  if(s==='A1'||s==='A2'){
+    ['A1','A2'].forEach(function(x){
+      document.getElementById('tc-'+x).classList.toggle('selected',x===s);
+      document.getElementById('sub-'+x).classList.toggle('show',x===s);
+    });
+  }else{
+    ['B1','B2'].forEach(function(x){
+      document.getElementById('tc-'+x).classList.toggle('selected',x===s);
+      document.getElementById('sub-'+x).classList.toggle('show',x===s);
+    });
+  }
+}
+
+// ===== 비용 수집 헬퍼 =====
+function getRadioCost(cid, list, pax){
+  var c=document.getElementById(cid); if(!c) return {cost:0,name:''};
+  var inp=c.querySelector('input[type=radio]:checked');
+  if(!inp||inp.value==='none') return {cost:0,name:''};
+  var a=list.find(function(x){return x.id===inp.value;});
+  return a?{cost:calcActCost(a,pax),name:a.name}:{cost:0,name:''};
+}
+function getCheckCost(cid, list, pax){
+  var c=document.getElementById(cid); if(!c) return {cost:0,name:''};
+  var inp=c.querySelector('input[type=checkbox]:checked');
+  if(!inp) return {cost:0,name:''};
+  var a=list.find(function(x){return x.id===inp.value;});
+  return a?{cost:calcActCost(a,pax),name:a.name}:{cost:0,name:''};
+}
+
+// 한 섹션(전일/반일)의 활성 비용 계산
+// dep730: true이면 07:30(전일+반일), false이면 09:00
+function getSectionCost(prefix, pax, dep730){
+  var names=[], cost=0;
+  if(!dep730){
+    // 09:00
+    var r=getRadioCost(prefix+'-900', ACT_900, pax);
+    return {cost:r.cost, names:r.name?[r.name]:[]};
+  }
+  // 전일 열려있고 선택됐는지
+  var fullOpen=document.getElementById(prefix+'-full-body') &&
+               document.getElementById(prefix+'-full-body').classList.contains('open');
+  var halfOpen=document.getElementById(prefix+'-half-body') &&
+               document.getElementById(prefix+'-half-body').classList.contains('open');
+  if(fullOpen){
+    var f=getRadioCost(prefix+'-full', ACT_FULL, pax);
+    if(f.name){names.push(f.name+'(전일)'); cost+=f.cost;}
+  }
+  if(halfOpen){
+    var am=getCheckCost(prefix+'-ham', ACT_HALF, pax);
+    var pm=getCheckCost(prefix+'-hpm', ACT_HALF, pax);
+    if(am.name){names.push(am.name+'(오전반일)'); cost+=am.cost;}
+    if(pm.name){names.push(pm.name+'(오후반일)'); cost+=pm.cost;}
+  }
+  return {cost:cost, names:names};
+}
+
+function getHotelCost(hcid, rtName, pax){
+  var c=document.getElementById(hcid); if(!c) return {cost:0,label:''};
+  var inp=c.querySelector('input[type=radio]:checked');
+  var h=inp?HOTELS_VV.find(function(x){return x.id===inp.value;})||HOTELS_VV[0]:HOTELS_VV[0];
+  var rt=document.querySelector('input[name="'+rtName+'"]:checked');
+  var rooms=(rt&&rt.value==='double')?Math.ceil(pax/2):pax;
+  return {cost:h.price*rooms, label:h.name+'('+h.type+') × '+rooms+'룸'};
+}
+
+// ===== 메인 계산 =====
+function calc(){
+  var pax=+document.getElementById('pax').value;
+  var sv=document.getElementById('startdate').value;
+  document.getElementById('r-name').textContent=document.getElementById('name').value||'—';
+  document.getElementById('r-phone').textContent=document.getElementById('phone').value||'—';
+  document.getElementById('r-date').textContent=sv?sv.replace(/-/g,'.')+'(방비엥 이동일)':'—';
+
+  var car=387500, actTotal=0, hotelCost=0, golfCost=0;
+  var actRows='', actNames=[], subLabel='';
+  var hasHotel=false, hasGolf=false;
+
+  // 골프 표시
+  var golfKrw=25*pax*KRW+(pax%2!==0?13*KRW:0);
+  var gd=document.getElementById('golf-krw-display');
+  if(gd) gd.textContent='인당 ₩'+(25*KRW).toLocaleString()+(pax%2!==0?' + 홀수 추가 ₩'+(13*KRW).toLocaleString():'');
+  var gw=document.getElementById('golf-odd-warn');
+  if(gw) gw.classList.toggle('show', selectedSubType==='B2'&&pax%2!==0);
+
+  if(selectedSubType==='A1'){
+    subLabel='당일 왕복';
+    var dep=document.querySelector('input[name="depA1"]:checked');
+    var d730=dep?dep.value==='730':true;
+    var info=getSectionCost('act-A1', pax, d730);
+    actTotal=info.cost; actNames=info.names;
+    if(info.cost>0) actRows+='<div class="rr"><span class="lb">액티비티 ('+pax+'명)</span><span>₩'+info.cost.toLocaleString()+'</span></div>';
+
+  }else if(selectedSubType==='A2'){
+    subLabel='일박 후 복귀 (2일 일정)';
+    var dep2=document.querySelector('input[name="depA2"]:checked');
+    var d730b=dep2?dep2.value==='730':true;
+    var d1=getSectionCost('act-A2d1', pax, d730b);
+    // 2일차: 전일/반일 모두 open 여부로 판단
+    var d2=getSectionCost('act-A2d2', pax, true);
+    actTotal=d1.cost+d2.cost;
+    actNames=d1.names.map(function(n){return '1일:'+n;}).concat(d2.names.map(function(n){return '2일:'+n;}));
+    if(d1.cost>0) actRows+='<div class="rr"><span class="lb">1일차 액티비티 ('+pax+'명)</span><span>₩'+d1.cost.toLocaleString()+'</span></div>';
+    if(d2.cost>0) actRows+='<div class="rr"><span class="lb">2일차 액티비티 ('+pax+'명)</span><span>₩'+d2.cost.toLocaleString()+'</span></div>';
+    hasHotel=true;
+    var hh=getHotelCost('hotel-A2','roomA2',pax);
+    hotelCost=hh.cost;
+    document.getElementById('r-hotel-lbl').textContent='방비엥 숙박 ('+hh.label+')';
+    document.getElementById('r-hotel-cost').textContent='₩'+hotelCost.toLocaleString();
+
+  }else if(selectedSubType==='B1'){
+    subLabel='골프 후 이동 → 익일 액티비티 후 자유시간, 복귀';
+    var b1=getSectionCost('act-B1', pax, true);
+    actTotal=b1.cost; actNames=b1.names;
+    if(b1.cost>0) actRows+='<div class="rr"><span class="lb">익일 액티비티 ('+pax+'명)</span><span>₩'+b1.cost.toLocaleString()+'</span></div>';
+    hasHotel=true;
+    var bh1=getHotelCost('hotel-B','roomB',pax);
+    hotelCost=bh1.cost;
+    document.getElementById('r-hotel-lbl').textContent='방비엥 숙박 ('+bh1.label+')';
+    document.getElementById('r-hotel-cost').textContent='₩'+hotelCost.toLocaleString();
+
+  }else if(selectedSubType==='B2'){
+    subLabel='골프 후 이동 → 익일 오전 골프 후 자유시간, 복귀';
+    hasGolf=true; golfCost=25*pax*KRW+(pax%2!==0?13*KRW:0);
+    document.getElementById('r-golf-cost').textContent='₩'+golfCost.toLocaleString();
+    // 오후 반일 (선택적)
+    var b2pm=getRadioCost('act-B2-hpm', ACT_HALF, pax);
+    actTotal=b2pm.cost; actNames=b2pm.name?[b2pm.name+'(오후반일)']:[];
+    if(b2pm.cost>0) actRows+='<div class="rr"><span class="lb">오후 반일 액티비티 ('+pax+'명)</span><span>₩'+b2pm.cost.toLocaleString()+'</span></div>';
+    hasHotel=true;
+    var bh2=getHotelCost('hotel-B','roomB',pax);
+    hotelCost=bh2.cost;
+    document.getElementById('r-hotel-lbl').textContent='방비엥 숙박 ('+bh2.label+')';
+    document.getElementById('r-hotel-cost').textContent='₩'+hotelCost.toLocaleString();
+  }
+
+  document.getElementById('r-basic').textContent=pax+'명 / '+(selectedTourType==='A'?'당일 or 일박 투어':'골프 후 이동 투어');
+  document.getElementById('r-tourtype').textContent=subLabel;
+  document.getElementById('r-activity').textContent=actNames.length?actNames.join(' / '):'—';
+  document.getElementById('r-act-rows').innerHTML=actRows;
+  document.getElementById('r-hotel-row').style.display=hasHotel?'flex':'none';
+  document.getElementById('r-golf-row').style.display=hasGolf?'flex':'none';
+
+  var sbc=opts.speedboat?Math.ceil(pax/2)*15500:0;
+  document.getElementById('r-speedboat-row').style.display=opts.speedboat?'flex':'none';
+  document.getElementById('r-speedboat-cost').textContent='₩'+sbc.toLocaleString();
+
+  var total=car+actTotal+hotelCost+golfCost+sbc;
+  document.getElementById('r-total').textContent='₩'+total.toLocaleString();
+  document.getElementById('r-per').textContent='1인당 약 ₩'+Math.round(total/pax).toLocaleString();
+}
+
+function sendKakao(){
+  var pax=document.getElementById('pax').value;
+  var lines=['=== 등대투어 방비엥 투어 견적 ===',
+    '고객명: '+(document.getElementById('name').value||'미입력'),
+    '연락처: '+(document.getElementById('phone').value||'미입력'),
+    '출발일: '+(document.getElementById('startdate').value||'미입력'),
+    '인원: '+pax+'명',
+    '선택 일정: '+document.getElementById('r-tourtype').textContent,
+    '선택 액티비티: '+document.getElementById('r-activity').textContent,
+    '',
+    '예상 총 비용: '+document.getElementById('r-total').textContent,
+    '1인당: '+document.getElementById('r-per').textContent,
+    '','* 정확한 견적은 상담을 통해 확인해 주세요.'];
+  var text=lines.join('\n');
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(function(){
+      alert('견적 내용이 클립보드에 복사되었습니다!\n카카오톡 채팅창에 붙여넣기(Ctrl+V) 후 전송해 주세요.');
+      window.open('https://open.kakao.com/o/saKGO23','_blank');
+    });
+  }else{ window.open('https://open.kakao.com/o/saKGO23','_blank'); }
+}
+function printPDF(){window.print();}
+
+rebuildAll();
+calc();
+</script>
+</body>
+</html>
