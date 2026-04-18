@@ -379,9 +379,10 @@ body{background:#f0f4f0;min-height:100vh;padding:1rem;font-family:'Noto Sans KR'
       <div style="font-size:12px;font-weight:700;color:#1a6b3c;margin-bottom:8px">⛳ 방비엥 골프장 (단 1개소 · 주중/주말 동일 요금)</div>
       <div style="display:flex;justify-content:space-between;font-size:13px;color:#555;margin-bottom:4px">
         <span>18홀 그린피 + 2인 1카트 + 캐디 포함</span>
-        <span id="golf-krw-display" style="font-weight:700;color:#1a6b3c">—</span>
+        <span style="font-weight:700;color:#1a6b3c">인당 ₩80,000</span>
       </div>
-      <div id="golf-odd-warn" class="warn">홀수 인원 — 1인 1카트 추가비용 ₩20,150이 자동 반영됩니다.</div>
+      <div id="golf-total-display" style="font-size:12px;color:#555;padding:3px 0"></div>
+      <div id="golf-odd-warn" class="warn">홀수 인원 — 1인 1카트 추가비용 ₩20,000이 자동 반영됩니다.</div>
       <div style="font-size:11px;color:#888;margin-top:4px">※ 캐디팁 $15는 별도 (라운딩 후 직접 지급)</div>
     </div>
     <div style="font-size:12px;font-weight:700;color:#2a6b3c;margin-bottom:6px">🎯 오후 반일 액티비티 (선택 사항 · PM 01:00~)</div>
@@ -501,11 +502,44 @@ var opts={speedboat:false};
 var KRW=1550;
 
 // ===== UI 헬퍼 =====
+// 전일/반일 상호 배타 토글
+// 전일 열 때 → 반일 닫고 반일 체크박스 초기화
+// 반일 열 때 → 전일 닫고 전일 라디오 uncheck
 function toggleColl(bodyId, arrId){
   var b=document.getElementById(bodyId), a=document.getElementById(arrId);
   if(!b) return;
-  var open=b.classList.toggle('open');
-  if(a) a.classList.toggle('open', open);
+  var willOpen = !b.classList.contains('open');
+  var isFull = bodyId.indexOf('-full-body') !== -1;
+  var isHalf = bodyId.indexOf('-half-body') !== -1;
+  // prefix: 'act-A1-full-body' → 'act-A1'
+  var prefix = bodyId.replace(/-full-body$/, '').replace(/-half-body$/, '');
+
+  if(willOpen){
+    if(isFull){
+      // 반일 패널 닫기 + 반일 체크박스 전부 해제
+      var hb=document.getElementById(prefix+'-half-body');
+      var ha=document.getElementById('arr-'+prefix+'-half');
+      if(hb){
+        hb.classList.remove('open');
+        hb.querySelectorAll('input[type=checkbox]').forEach(function(i){i.checked=false;});
+        hb.querySelectorAll('.act-item').forEach(function(el){el.classList.remove('selected');});
+      }
+      if(ha) ha.classList.remove('open');
+    }
+    if(isHalf){
+      // 전일 패널 닫기 + 전일 라디오 모두 uncheck
+      var fb=document.getElementById(prefix+'-full-body');
+      var fa=document.getElementById('arr-'+prefix+'-full');
+      if(fb){
+        fb.classList.remove('open');
+        fb.querySelectorAll('input[type=radio]').forEach(function(i){i.checked=false;});
+        fb.querySelectorAll('.act-item').forEach(function(el){el.classList.remove('selected');});
+      }
+      if(fa) fa.classList.remove('open');
+    }
+  }
+  b.classList.toggle('open', willOpen);
+  if(a) a.classList.toggle('open', willOpen);
   calc();
 }
 function updateRg(id){
@@ -748,12 +782,16 @@ function calc(){
   var actRows='', actNames=[], subLabel='';
   var hasHotel=false, hasGolf=false;
 
-  // 골프 표시
-  var golfKrw=25*pax*KRW+(pax%2!==0?13*KRW:0);
-  var gd=document.getElementById('golf-krw-display');
-  if(gd) gd.textContent='인당 ₩'+(25*KRW).toLocaleString()+(pax%2!==0?' + 홀수 추가 ₩'+(13*KRW).toLocaleString():'');
+  // 골프 인당 80,000원 (홀수 시 추가 20,000원)
+  var GOLF_PER = 80000;
+  var GOLF_ODD_EXTRA = 20000;
   var gw=document.getElementById('golf-odd-warn');
   if(gw) gw.classList.toggle('show', selectedSubType==='B2'&&pax%2!==0);
+  var gd=document.getElementById('golf-total-display');
+  if(gd && selectedSubType==='B2'){
+    var gt=GOLF_PER*pax+(pax%2!==0?GOLF_ODD_EXTRA:0);
+    gd.textContent='→ 팀 전체 골프 비용: ₩'+gt.toLocaleString()+(pax%2!==0?' (홀수 추가 ₩'+GOLF_ODD_EXTRA.toLocaleString()+' 포함)':'');
+  } else if(gd){ gd.textContent=''; }
 
   if(selectedSubType==='A1'){
     subLabel='당일 왕복';
@@ -793,7 +831,7 @@ function calc(){
 
   }else if(selectedSubType==='B2'){
     subLabel='골프 후 이동 → 익일 오전 골프 후 자유시간, 복귀';
-    hasGolf=true; golfCost=25*pax*KRW+(pax%2!==0?13*KRW:0);
+    hasGolf=true; golfCost=GOLF_PER*pax+(pax%2!==0?GOLF_ODD_EXTRA:0);
     document.getElementById('r-golf-cost').textContent='₩'+golfCost.toLocaleString();
     // 오후 반일 (선택적)
     var b2pm=getRadioCost('act-B2-hpm', ACT_HALF, pax);
