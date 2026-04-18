@@ -410,7 +410,7 @@ body{background:#f0f4f0;min-height:100vh;padding:1rem;font-family:'Noto Sans KR'
     <strong>식사</strong><br>
     · <span style="color:#1a5c2e;font-weight:600">전일 액티비티 선택 시</span> — 해당 투어사에서 중식(투어식 도시락) 제공<br>
     · <span style="color:#0c5460;font-weight:600">반일 투어 선택 시</span> — 중식 미제공, 시내에서 자체 해결 (인당 약 ₩10,000~15,000)<br>
-    · 석식·조식은 현지 식당 자유 이용<br>
+    · 석식은 현지 식당 자유 이용 (조식은 숙소 제공)<br>
     <span style="font-size:11px;color:#555">주류 및 음료 등 개인 비용 별도</span>
   </div>
   <div class="info-box">
@@ -503,37 +503,46 @@ var KRW=1550;
 
 // ===== UI 헬퍼 =====
 // 전일/반일 상호 배타 토글
-// 전일 열 때 → 반일 닫고 반일 체크박스 초기화
-// 반일 열 때 → 전일 닫고 전일 라디오 uncheck
+// 전일 열 때 → 반일 닫고 반일 라디오를 "선택 안 함"으로 초기화
+// 반일 열 때 → 전일 닫고 전일 라디오를 "선택 안 함"으로 초기화
 function toggleColl(bodyId, arrId){
   var b=document.getElementById(bodyId), a=document.getElementById(arrId);
   if(!b) return;
   var willOpen = !b.classList.contains('open');
   var isFull = bodyId.indexOf('-full-body') !== -1;
   var isHalf = bodyId.indexOf('-half-body') !== -1;
-  // prefix: 'act-A1-full-body' → 'act-A1'
   var prefix = bodyId.replace(/-full-body$/, '').replace(/-half-body$/, '');
 
   if(willOpen){
     if(isFull){
-      // 반일 패널 닫기 + 반일 체크박스 전부 해제
+      // 반일 패널 닫기 + 반일 라디오 "선택 안 함"으로 리셋
       var hb=document.getElementById(prefix+'-half-body');
       var ha=document.getElementById('arr-'+prefix+'-half');
       if(hb){
         hb.classList.remove('open');
-        hb.querySelectorAll('input[type=checkbox]').forEach(function(i){i.checked=false;});
-        hb.querySelectorAll('.act-item').forEach(function(el){el.classList.remove('selected');});
+        hb.querySelectorAll('input[type=radio]').forEach(function(i){
+          i.checked = (i.value==='none');
+        });
+        hb.querySelectorAll('.act-item').forEach(function(el){
+          var inp=el.querySelector('input');
+          el.classList.toggle('selected', inp&&inp.value==='none');
+        });
       }
       if(ha) ha.classList.remove('open');
     }
     if(isHalf){
-      // 전일 패널 닫기 + 전일 라디오 모두 uncheck
+      // 전일 패널 닫기 + 전일 라디오 "선택 안 함"으로 리셋
       var fb=document.getElementById(prefix+'-full-body');
       var fa=document.getElementById('arr-'+prefix+'-full');
       if(fb){
         fb.classList.remove('open');
-        fb.querySelectorAll('input[type=radio]').forEach(function(i){i.checked=false;});
-        fb.querySelectorAll('.act-item').forEach(function(el){el.classList.remove('selected');});
+        fb.querySelectorAll('input[type=radio]').forEach(function(i){
+          i.checked = (i.value==='none');
+        });
+        fb.querySelectorAll('.act-item').forEach(function(el){
+          var inp=el.querySelector('input');
+          el.classList.toggle('selected', inp&&inp.value==='none');
+        });
       }
       if(fa) fa.classList.remove('open');
     }
@@ -570,10 +579,14 @@ function calcActCost(act, pax){
 // 라디오 그리드 (전일, 09:00)
 function buildRadio(containerId, list, pax){
   var c=document.getElementById(containerId); if(!c) return;
-  c.innerHTML=list.map(function(a,i){
+  var none='<label class="act-item selected">'+
+    '<input type="radio" name="r_'+containerId+'" value="none" checked onchange="syncSel(\''+containerId+'\');calc()">'+
+    '<span class="act-name" style="color:#888">선택 안 함 (개별 자유시간)</span>'+
+    '<span class="act-price" style="color:#aaa">₩0</span></label>';
+  c.innerHTML=none+list.map(function(a){
     var cost=calcActCost(a,pax);
-    return '<label class="act-item'+(i===0?' selected':'')+'">'+
-      '<input type="radio" name="r_'+containerId+'" value="'+a.id+'"'+(i===0?' checked':'')+' onchange="syncSel(\''+containerId+'\');calc()">'+
+    return '<label class="act-item">'+
+      '<input type="radio" name="r_'+containerId+'" value="'+a.id+'" onchange="syncSel(\''+containerId+'\');calc()">'+
       '<span class="act-name">'+a.name+'</span>'+
       '<span class="act-price">₩'+cost.toLocaleString()+'</span></label>';
   }).join('');
@@ -586,13 +599,17 @@ function buildRadio(containerId, list, pax){
   });
 }
 
-// 체크박스 그리드 (반일, max 1)
+// 반일 그리드 — 라디오 방식, "선택 안 함" 기본 선택
 function buildCheck(containerId, list, pax){
   var c=document.getElementById(containerId); if(!c) return;
-  c.innerHTML=list.map(function(a){
+  var none='<label class="act-item selected">'+
+    '<input type="radio" name="r_'+containerId+'" value="none" checked onchange="syncSel(\''+containerId+'\');calc()">'+
+    '<span class="act-name" style="color:#888">선택 안 함 (개별 자유시간)</span>'+
+    '<span class="act-price" style="color:#aaa">₩0</span></label>';
+  c.innerHTML=none+list.map(function(a){
     var cost=calcActCost(a,pax);
     return '<label class="act-item">'+
-      '<input type="checkbox" name="c_'+containerId+'" value="'+a.id+'" onchange="enforceOne(\''+containerId+'\');calc()">'+
+      '<input type="radio" name="r_'+containerId+'" value="'+a.id+'" onchange="syncSel(\''+containerId+'\');calc()">'+
       '<span class="act-name">'+a.name+'</span>'+
       '<span class="act-price">₩'+cost.toLocaleString()+'</span></label>';
   }).join('');
@@ -600,7 +617,7 @@ function buildCheck(containerId, list, pax){
     el.addEventListener('click',function(e){
       if(e.target.tagName==='INPUT') return;
       var inp=el.querySelector('input'); if(!inp) return;
-      inp.checked=!inp.checked; enforceOne(containerId); calc();
+      inp.checked=true; syncSel(containerId); calc();
     });
   });
 }
@@ -728,8 +745,8 @@ function getRadioCost(cid, list, pax){
 }
 function getCheckCost(cid, list, pax){
   var c=document.getElementById(cid); if(!c) return {cost:0,name:''};
-  var inp=c.querySelector('input[type=checkbox]:checked');
-  if(!inp) return {cost:0,name:''};
+  var inp=c.querySelector('input[type=radio]:checked');
+  if(!inp||inp.value==='none') return {cost:0,name:''};
   var a=list.find(function(x){return x.id===inp.value;});
   return a?{cost:calcActCost(a,pax),name:a.name}:{cost:0,name:''};
 }
